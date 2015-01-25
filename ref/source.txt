@@ -1,0 +1,39 @@
+    /**
+     * This function is to write log message received from log4javascript client with json layout.
+     * Message is logged with INFO level on server and with log level from client.
+     * Client time is logged which can be compared with server time for the differences
+     * @param request HttpServletRequest expected to have mandatory "line" and optional "level" parameters.
+     * @param response HttpServletResponse not changed
+     * @return null
+     */
+    @Override
+    public ModelAndView log4js(HttpServletRequest request, HttpServletResponse response) {
+        String text = RequestUtil.getStringValue(request, "data", "");
+        try {
+            JSONArray jsonArray = new JSONArray(text);
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-M-dd hh:mm:ss");
+
+            for (int i=0; i < jsonArray.length(); i++) {
+                JSONObject j = jsonArray.getJSONObject(i);
+                // Try block for a given single JSONObject.
+                try {
+                    String sDate = sdf.format(new Date(Long.parseLong(j.getString("timestamp"))));
+                    logger.log(Level.toLevel(j.getString("level")), String.format("%s [%s] %s", sDate, j.getString("logger"), j.getString("message")));
+                } catch (Exception err) {
+                    logger.log(Level.ERROR, "ERROR while logging " + j.toString(), err);
+                }
+            }
+        } catch (JSONException e) {
+            logger.log(Level.ERROR, "ERROR while creating json from " + text, e);
+        } catch (Exception e) {
+            logger.log(Level.ERROR, "ERROR while creating json from " + text, e);
+        }
+        return HttpResponseUtil.write1x1PixelAsResponse(response) ;
+    }
+
+?
+    <dependency>
+	<groupId>org.apache.sling</groupId>
+	<artifactId>org.apache.sling.commons.json</artifactId>
+	<version>2.0.10</version>
+</dependency>
